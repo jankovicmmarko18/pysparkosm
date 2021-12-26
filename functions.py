@@ -214,20 +214,46 @@ def dump_buildings_to_geojson(fname,pdfs):
 
 def read_gpd(path,table_name,scheema,**kwargs):
     filenames = glob.glob(path + "/*.geojson")
-
+    
     dfs = []
     for filename in filenames:
         print('reading: ',filename)
         try:
             temp_file=gpd.read_file(filename)
             temp_file.crs='EPSG:4326'
-            try:
-                push_to_postgis(temp_file,kwargs['engine'],scheema,table_name,'append')
-            except:
-                print('failed for: ',filename)
+            if 'relation' in filename:
+                try:
+                    push_to_postgis(temp_file,kwargs['engine'],scheema,table_name+'_relation','append')
+                except:
+                    print('failed for: ',filename+'_relation')
+            else:
+                try:
+                    push_to_postgis(temp_file,kwargs['engine'],scheema,table_name,'append')
+                except:
+                    print('failed for: ',filename)
         except:
             print('reading failed for: ',filename)
         print('push to db')
+        
+    print('publish on geoserver')
+    if 'relation' in filename:
+        try:
+            #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',
+            #                     table_name,'crowdpulse','crowdpulse_db_polygons',table_name)
+            publish_on_geoserver(kwargs['geoserver_url'],kwargs['geoserver_username'],kwargs['geoserver_pass'],
+                                 table_name,kwargs['geoserver_wspace'],kwargs['geoserver_store'],table_name+'_relation')
+            print('done: ',filename+'_relation')
+        except:
+            print('publishing failed ', filename+'_relation')
+    else:
+        try:
+            #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',
+            #                     table_name,'crowdpulse','crowdpulse_db_polygons',table_name)
+            publish_on_geoserver(kwargs['geoserver_url'],kwargs['geoserver_username'],kwargs['geoserver_pass'],
+                                 table_name,kwargs['geoserver_wspace'],kwargs['geoserver_store'],table_name)
+            print('done: ',filename)
+        except:
+            print('publishing failed ', filename)
 
 
 
