@@ -10,15 +10,15 @@ from functions import *
 #fp=get_data('south-america',directory='./osm')
 
 #PARQUETIZE PBF FILES TO NODE, WAY, RELATION
-#parquetize(r'/home/marko/osm-parquetizer/target/osm-parquetizer-1.0.1-SNAPSHOT.jar','./osm/south-america-latest.osm.pbf')
+#parquetize(r'/home/marko/osm-parquetizer/target/osm-parquetizer-1.0.1-SNAPSHOT.jar','../osm/south-america-latest.osm.pbf')
 
 #LOAD PARQUET FILES:
 # provide pbf name: ex: south_america (always use _ instead of -)
 pbfname='south_america'
 
-node=spark.read.parquet('./osm/south-america-latest.osm.pbf.node.parquet')
-way=spark.read.parquet('./osm/south-america-latest.osm.pbf.way.parquet')
-relation=spark.read.parquet('./osm/south-america-latest.osm.pbf.relation.parquet')
+node=spark.read.parquet('../osm/south-america-latest.osm.pbf.node.parquet')
+way=spark.read.parquet('../osm/south-america-latest.osm.pbf.way.parquet')
+relation=spark.read.parquet('../osm/south-america-latest.osm.pbf.relation.parquet')
 
 #RUN SCRIPTS:
 #NODES:
@@ -50,7 +50,7 @@ filterr={
 
         }
 
-poi_extractor(file=node,filterr=filterr,save_geojson=True,pbfname='south_america',directory='./osm/geojsons')
+poi_extractor(file=node,filterr=filterr,save_geojson=True,pbfname='south_america',directory='../osm/geojsons')
 
 
 #WAYS:
@@ -65,20 +65,22 @@ kwargs={'engine':pg_connection('marko','rumarec18','34.91.102.177','5432','crowd
        }
 
 pdfs=pull_buildings(node,way)
-fname='./osm/geojson_polygons/south-america-latest-building'
+fname='../osm/geojson_polygons/south-america-latest-building'
 dump_buildings_to_geojson(fname,pdfs)
 
 
 #RELATIONS:
 
 pdf=pull_buildings_relations(node,way,relation)
-fname_rl='./osm/geojson_polygons/south-america-latest-building-relations'
+
+#fname_rl MUST CONTAIN relation WORD IN ORDER TO BE RECOGNIZED AND SEPARATED IN SPECIFIC TABLE BECAUSE OF DIFFERENT GEOMETRY TYPE
+fname_rl='../osm/geojson_polygons/south-america-latest-building-relations'
 dump_buildings_to_geojson_relation(fname_rl,pdf)
 
 
 #READ AND PUSH POLYGONS TO DB AND PUBLISH TO GEOSERVER
 
-read_gpd(path='./osm/geojson_polygons/',table_name=pbfname,scheema='polygons',**kwargs)
+read_gpd(path='../osm/geojson_polygons/',table_name=pbfname,scheema='polygons',**kwargs)
 
 
 
