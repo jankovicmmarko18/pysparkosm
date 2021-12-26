@@ -348,26 +348,42 @@ def dump_buildings_to_geojson_relation(fname,pdf):
             #print('val:',jj)
             lo=[]
             #print(jj[0].role.decode())
+            #print(jj[1][0])
             if jj[0].role.decode() == 'outer':
+                #print(jj[0].role.decode())
+                #lo.insert(0,jj[0].role.decode())
                 for ii in jj[1]:
                     #print(ii.point.latitude)
+                    #lo.insert(0,[ii.point.longitude,ii.point.latitude])
                     lo.append([ii.point.longitude,ii.point.latitude])
+                if len(lo)>3:   
+                    lov.insert(0,lo)
+                    #print(lo)
+                elif (len(lo) > 0) and (len(lo)<= 3):
+                    for k in lo:
+                        lov.append(k)
             else:
+                #lo.append(jj[0].role.decode())
+                #print(jj[0].role.decode())
                 for ii in jj[1]:
                     #print(ii.point.latitude)
                     lo.append([ii.point.longitude,ii.point.latitude])
-            if len(lo)>3:   
-                lov.append(lo)
-                #print(lo)
-            elif (len(lo) > 0) and (len(lo)<= 3):
-                for k in lo:
-                    lov.append(k)
+
+                if len(lo)>3:   
+                    lov.append(lo)
+                    #print(lo)
+                elif (len(lo) > 0) and (len(lo)<= 3):
+                    for k in lo:
+                        lov.append(k)
+
                 #print('les than 3 points',key)
+            #print(lo)
         #print(lov)
         features={"type":"Feature","properties":{'id':str(key),'tags':str(pdf.loc[i,'tags'])},"geometry":{"type":"MultiPolygon","coordinates":[]}}
         features['geometry']['coordinates'].append(lov)
         #if features not in d['features']:
         d['features'].append(features)
+        #break
     with open(fname+'.geojson','w') as f:
         json.dump(d, f)
     print('dumping finished, file name: ',fname+'.geojson')
