@@ -1,6 +1,7 @@
 from functions import *
-#UNCOMENT TO SEE AVAILABLE SOURCES
-directory='./osm'
+#CHANGE directory where you want to extract the files
+#CHANGE pbfname to match the available pbf source name (see available sources by calling sources.(arguments) see below)
+directory='../osm'
 pbfname='chile'
 
 
@@ -13,7 +14,7 @@ except:
     print('some of the directories already exist')
 
 
-
+#UNCOMENT TO SEE AVAILABLE SOURCES
 #sources.available.keys()
 #sources.south_america.available
 #sources.subregions.available.keys()
