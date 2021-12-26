@@ -163,6 +163,11 @@ conda activate osm
 conda install -c conda-forge pyrosm
 pip install --ignore-installed cykhash==1.0.2
 
+In order to fully use the script capabilities, install and connect geoserver, mapstore and postgresql with postgis extension and set the parameters in run.py file
+Moify run.py input parameters
+In order to run the script, locate run.py, open anaconda terminal with active osm environment and run:
+python run.py
+files will be extracted on location (directory+pbfname) and uploaded to the database and published on the geoserver.
 
 
 
