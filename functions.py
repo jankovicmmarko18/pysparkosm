@@ -143,7 +143,7 @@ def pull_buildings(node,way):
     #n=st.filter((st.latitude > -25) & (st.latitude < -24) &(st.longitude > -47) &(st.longitude < -46) )
     # No filter
     n=st
-
+    
     #
     res=way.select('id','tags','nodes')
     rest=n.select('nodeId','tags','latitude','longitude')
@@ -153,7 +153,7 @@ def pull_buildings(node,way):
     #select building
     res=res.filter(array_contains(res.tags['key'],bytearray(b'building')))
     way=way.withColumn('tags',res.tags.cast(StringType()))
-
+    
     #prepare file for polygon creation
     wayGeometryDF = res.join(rest, res.indexNode.nodeId==rest.nodeId, how="inner").groupBy('id').agg(f.collect_list(struct('indexNode.index','point',)).alias('colection'))
     #to catch tags
@@ -162,7 +162,7 @@ def pull_buildings(node,way):
     pdfs=wgdf.to_pandas_on_spark()
     pdfs['lindex']=pdfs.index
     return pdfs
-
+    
 
 def dump_buildings_to_geojson(fname,pdfs):
     c=len(pdfs.index)
@@ -181,7 +181,7 @@ def dump_buildings_to_geojson(fname,pdfs):
         #pdf = df.to_pandas()
         print('sorting')
         sorter(pdf)
-
+        
         print('creating geojson')
         d={}
         d['type']="FeatureCollection"
@@ -206,68 +206,80 @@ def dump_buildings_to_geojson(fname,pdfs):
                 #print(key,val)
                 #if br>2:
                 #break
-
+        
         with open(fname+'_'+str(br)+'.geojson','w') as f:
             json.dump(d, f)
-        br+=1
         print('iter done'+fname+'_'+str(br)+'.geojson')
-
-def read_gpd(path,table_name,scheema,**kwargs):
-    filenames = glob.glob(path + "/*.geojson")
-    
-    dfs = []
-    for filename in filenames:
-        print('reading: ',filename)
-        try:
-            temp_file=gpd.read_file(filename)
-            temp_file.crs='EPSG:4326'
-            if 'relation' in filename:
-                try:
-                    push_to_postgis(temp_file,kwargs['engine'],scheema,table_name+'_relation','append')
-                except:
-                    print('failed for: ',filename+'_relation')
-            else:
-                try:
-                    push_to_postgis(temp_file,kwargs['engine'],scheema,table_name,'append')
-                except:
-                    print('failed for: ',filename)
-        except:
-            print('reading failed for: ',filename)
-        print('push to db')
+        br+=1
         
-    print('publish on geoserver')
-    if 'relation' in filename:
-        try:
-            #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',
-            #                     table_name,'crowdpulse','crowdpulse_db_polygons',table_name)
-            publish_on_geoserver(kwargs['geoserver_url'],kwargs['geoserver_username'],kwargs['geoserver_pass'],
-                                 table_name,kwargs['geoserver_wspace'],kwargs['geoserver_store'],table_name+'_relation')
-            print('done: ',filename+'_relation')
-        except:
-            print('publishing failed ', filename+'_relation')
-    else:
-        try:
-            #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',
-            #                     table_name,'crowdpulse','crowdpulse_db_polygons',table_name)
-            publish_on_geoserver(kwargs['geoserver_url'],kwargs['geoserver_username'],kwargs['geoserver_pass'],
-                                 table_name,kwargs['geoserver_wspace'],kwargs['geoserver_store'],table_name)
-            print('done: ',filename)
-        except:
-            print('publishing failed ', filename)
-
-
-
-    print('publish on geoserver')
+def read_gpd(path,table_name,scheema,**kwargs):
     try:
-        #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',
-        #                     table_name,'crowdpulse','crowdpulse_db_polygons',table_name)
-        publish_on_geoserver(kwargs['geoserver_url'],kwargs['geoserver_username'],kwargs['geoserver_pass'],
-                             table_name,kwargs['geoserver_wspace'],kwargs['geoserver_store'],table_name)
-        print('done: ',filename)
+        filenames = glob.glob(path + '/ways/' + "/*.geojson")
+
+        dfs = []
+        for filename in filenames:
+            print('reading: ',filename)
+            try:
+                temp_file=gpd.read_file(filename)
+                temp_file.crs='EPSG:4326'
+                try:
+                    push_to_postgis(temp_file,
+                                    kwargs['engine'],
+                                    scheema,table_name+'_ways',
+                                    'append')
+                    print('push file: ',filename+'_ways ', 'successful')
+                    try:
+                        publish_on_geoserver(kwargs['geoserver_url'],
+                                             kwargs['geoserver_username'],
+                                             kwargs['geoserver_pass'],
+                                             table_name+'_ways',
+                                             kwargs['geoserver_wspace'],
+                                             kwargs['geoserver_store'],
+                                             table_name+'_ways')
+                        print('publish file: ',filename+'_ways ', 'successful')
+                    except:
+                        print('failed publish for: ',filename+'_ways')
+                except:
+                    print('falied push to db for: ',filename+'_ways')
+            except:
+                print('failed reading of file: ',filename)
     except:
-        print('publishing failed ', filename)
+        print('failed while reading ways')
+    #######################################################################    
+    try:
+        filenames = glob.glob(path + '/relations/' + "/*.geojson")
 
-
+        dfs = []
+        for filename in filenames:
+            print('reading: ',filename)
+            try:
+                temp_file=gpd.read_file(filename)
+                temp_file.crs='EPSG:4326'
+                try:
+                    push_to_postgis(temp_file,
+                                    kwargs['engine'],
+                                    scheema,table_name+'_relations',
+                                    'append')
+                    print('push file: ',filename+'_relations ', 'successful')
+                    try:
+                        publish_on_geoserver(kwargs['geoserver_url'],
+                                             kwargs['geoserver_username'],
+                                             kwargs['geoserver_pass'],
+                                             table_name+'_relations',
+                                             kwargs['geoserver_wspace'],
+                                             kwargs['geoserver_store'],
+                                             table_name+'_relations')
+                        print('publish file: ',filename+'_relations ', 'successful')
+                    except:
+                        print('failed publish for: ',filename+'_relations')
+                except:
+                    print('falied push to db for: ',filename+'_relations')
+            except:
+                print('failed reading of file: ',filename)
+    except:
+        print('failed while reading relations')
+        
+        
 def pull_buildings_relations(node,way,relation):
     rel=relation.select('id','tags','members')
     #st=node.withColumn('tags',node.tags.cast(StringType()))
@@ -344,7 +356,7 @@ def dump_buildings_to_geojson_relation(fname,pdf):
                 for ii in jj[1]:
                     #print(ii.point.latitude)
                     lo.append([ii.point.longitude,ii.point.latitude])
-            if len(lo)>3:
+            if len(lo)>3:   
                 lov.append(lo)
                 #print(lo)
             elif (len(lo) > 0) and (len(lo)<= 3):
@@ -359,7 +371,7 @@ def dump_buildings_to_geojson_relation(fname,pdf):
     with open(fname+'.geojson','w') as f:
         json.dump(d, f)
     print('dumping finished, file name: ',fname+'.geojson')
-
+    
 
 def poi_extractor(file,filterr,save_geojson=False,pbfname='',directory=''):
     s=file
@@ -402,27 +414,22 @@ def poi_extractor(file,filterr,save_geojson=False,pbfname='',directory=''):
         gdf = gpd.GeoDataFrame(df, geometry="geom",crs='EPSG:4326')
 
         #print('writting')
-
+        
             #gdf.to_file(directory+'/'+key+'.geojson',driver='GeoJSON')
         end_time=time.time()
         print("time elapsed: ",end_time-start_time)
         if save_geojson == True:
-            if directory!='':
-                try:
-                    os.mkdirs(directory)
-                except:
-                    pass
             print('export file ',pbfname+'_'+key,' to geojson')
             try:
                 gdf.to_file(directory+'/'+pbfname+'_'+key+'.geojson')
                 print(directory+'/'+pbfname+'_'+key,' file saved')
             except Exception:
                 print(directory+'/'+pbfname+'_'+key,' file is not saved')
-
+        
         print('Push to database')
         try:
             push_to_postgis(gdf,engine,'pois',pbfname+'_'+key,'replace')
             publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key,'crowdpulse','crowdpulse_db',pbfname+'_'+key)
         except:
             print(traceback.format_exc())
-            print('Push to db failed for:',pbfname+'_'+key)
+            print('Push to db failed for:',pbfname+'_'+key)            
