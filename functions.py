@@ -435,12 +435,30 @@ def poi_extractor(file,filterr,save_geojson=False,pbfname='',directory=''):
         end_time=time.time()
         print("time elapsed: ",end_time-start_time)
         if save_geojson == True:
-            print('export file ',pbfname+'_'+key,' to geojson')
-            try:
-                gdf.to_file(directory+'/'+pbfname+'_'+key+'.geojson')
-                print(directory+'/'+pbfname+'_'+key,' file saved')
-            except Exception:
-                print(directory+'/'+pbfname+'_'+key,' file is not saved')
+            if key == 'amenity':
+                for z in values:
+                    gdfs=gdf[gdf['value']==z]
+                    print('export file ',pbfname+'_'+key+'_'+z,' to geojson')
+                    try:
+                        gdfs.to_file(directory+'/'+pbfname+'_'+key+'_'+z+'.geojson')
+                        print(directory+'/'+pbfname+'_'+key+'_'+z,' file saved')
+                    except Exception:
+                        print(directory+'/'+pbfname+'_'+key+'_'+z,' file is not saved')
+                    try:
+                        print('Push to database: ',pbfname+'_'+key+'_'+z)
+                        push_to_postgis(gdfs,engine,'pois',pbfname+'_'+key+'_'+z,'replace')
+                        publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key+'_'+z,'crowdpulse','crowdpulse_db',pbfname+'_'+key+'_'+z)
+                    except:
+                        print(traceback.format_exc())
+                        print('Push to db failed for:',pbfname+'_'+key+'_'+z)  
+                        
+            else:
+                print('export file ',pbfname+'_'+key,' to geojson')
+                try:
+                    gdf.to_file(directory+'/'+pbfname+'_'+key+'.geojson')
+                    print(directory+'/'+pbfname+'_'+key,' file saved')
+                except Exception:
+                    print(directory+'/'+pbfname+'_'+key,' file is not saved')
         
         print('Push to database')
         try:
@@ -449,3 +467,81 @@ def poi_extractor(file,filterr,save_geojson=False,pbfname='',directory=''):
         except:
             print(traceback.format_exc())
             print('Push to db failed for:',pbfname+'_'+key)            
+
+def combine_polygon(filterr,pbfname,directory,**kwargs):
+    for key,value in filterr.items():
+        if key == 'amenity':
+            for val in value:
+                print('writting: ',key,val)
+                statement="""
+                    select id pol_id, tags pol_tags, geometry geom from 
+                    polygons."""+pbfname+"""_ways pol where tags ~ '"""+val+"""'
+                    """
+                gd_data=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+                statement="""
+                    select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+                    pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+                    pois."""+pbfname+'_'+key+'_'+val+""" as poi, polygons."""+pbfname+"""_ways as pol 
+                    where
+                    st_within(poi.geom, pol.geometry)
+                    """
+                gd_data2=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+                statement="""
+                    select id pol_id, tags pol_tags, geometry geom from 
+                    polygons."""+pbfname+"""_relations pol where tags ~ '"""+val+"""'
+                    """
+                gd_data3=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+                statement="""
+                    select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+                    pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+                    pois."""+pbfname+'_'+key+'_'+val+""" as poi, polygons."""+pbfname+"""_relations as pol 
+                    where
+                    st_within(poi.geom, pol.geometry)
+                    """
+                gd_data4=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+                frames=[gd_data,gd_data2,gd_data3,gd_data4]
+                rdf = gdf( pd.concat( frames, ignore_index=True) )
+                rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
+                try:
+                    rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+val+'.geojson')
+                except:
+                    print('failed for:',pbfname+'_'+key+'_'+val+'.geojson')
+        else:
+            print('writting: ',key)
+            statement="""
+                select id pol_id, tags pol_tags, geometry geom from 
+                polygons."""+pbfname+"""_ways pol where tags ~ '"""+key+"""'
+                """
+            gd_data=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+            statement="""
+                select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+                pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+                pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_ways as pol 
+                where
+                st_within(poi.geom, pol.geometry)
+                """
+            gd_data2=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+            statement="""
+                select id pol_id, tags pol_tags, geometry geom from 
+                polygons."""+pbfname+"""_relations pol where tags ~ '"""+key+"""'
+                """
+            gd_data3=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+            statement="""
+                select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+                pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+                pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_relations as pol 
+                where
+                st_within(poi.geom, pol.geometry)
+                """
+            gd_data4=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+            frames=[gd_data,gd_data2,gd_data3,gd_data4]
+            rdf = gdf( pd.concat( frames, ignore_index=True) )
+            rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
+            try:
+                rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'.geojson')
+            except:
+                print('failed for:',pbfname+'_'+key+'.geojson')
+        #print(statement)
+                #break
+            #break
+        #break
