@@ -10,6 +10,7 @@ try:
     os.mkdir(directory+'/'+pbfname+'/nodes')
     os.mkdir(directory+'/'+pbfname+'/ways')
     os.mkdir(directory+'/'+pbfname+'/relations')
+    os.mkdir(directory+'/'+pbfname+'/combination')
 except:
     print('some of the directories already exist')
 
@@ -39,14 +40,14 @@ relation=spark.read.parquet(directory+'/'+pbfname+'/'+pbfname+'-latest.osm.pbf.r
 #NODES:
 
 filterr={
-#    'amenity':[
-#        'college','driving_school','kindergarten',
-#        'language_school','library','toy_library',
-#        'music_school','school','university',
-#        'atm','bank','baby_hatch',
-#       'clinic','dentist','doctors',
-#       'hospital','nursing_home','pharmacy',
-#       'social_facility','veterinary'],
+    'amenity':[
+        'college','driving_school','kindergarten',
+        'language_school','library','toy_library',
+        'music_school','school','university',
+        'atm','bank','baby_hatch',
+       'clinic','dentist','doctors',
+       'hospital','nursing_home','pharmacy',
+       'social_facility','veterinary'],
     'aeroway':[
             'aerodrome','apron','control_tower','control_center','gate',
        'hangar','helipad','heliport','holding_position','navigationaid',
@@ -61,7 +62,7 @@ filterr={
     'factory':'',
     'history':'',
     'military':'',
-    #'power':''
+    'power':''
 
         }
 
@@ -95,6 +96,9 @@ dump_buildings_to_geojson_relation(fname_rl,pdf)
 #READ AND PUSH POLYGONS TO DB AND PUBLISH TO GEOSERVER
 
 read_gpd(path=directory+'/'+pbfname,table_name=pbfname,scheema='polygons',**kwargs)
+
+#PULL FINAL GEOJSONS - /combination
+combine_polygon(filterr,pbfname,directory,**kwargs)
 
 
 
