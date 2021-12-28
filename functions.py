@@ -217,16 +217,26 @@ def read_gpd(path,table_name,scheema,**kwargs):
         filenames = glob.glob(path + '/ways/' + "/*.geojson")
 
         dfs = []
+        br=0
         for filename in filenames:
             print('reading: ',filename)
             try:
                 temp_file=gpd.read_file(filename)
                 temp_file.crs='EPSG:4326'
                 try:
-                    push_to_postgis(temp_file,
+                    if br==0:
+                        print('push file: ',filename+'_ways ')
+                        push_to_postgis(temp_file,
                                     kwargs['engine'],
                                     scheema,table_name+'_ways',
-                                    'append')
+                                    'replace')
+                    else:
+                        
+                        push_to_postgis(temp_file,
+                                        kwargs['engine'],
+                                        scheema,table_name+'_ways',
+                                        'append')
+                    br+=1
                     print('push file: ',filename+'_ways ', 'successful')
                     try:
                         publish_on_geoserver(kwargs['geoserver_url'],
@@ -250,16 +260,26 @@ def read_gpd(path,table_name,scheema,**kwargs):
         filenames = glob.glob(path + '/relations/' + "/*.geojson")
 
         dfs = []
+        br=0
         for filename in filenames:
             print('reading: ',filename)
             try:
                 temp_file=gpd.read_file(filename)
                 temp_file.crs='EPSG:4326'
                 try:
-                    push_to_postgis(temp_file,
+                    if br==0:
+                        print('push file: ',filename+'_relations ')
+                        push_to_postgis(temp_file,
                                     kwargs['engine'],
                                     scheema,table_name+'_relations',
-                                    'append')
+                                    'replace')
+                    else:
+                        print('push file: ',filename+'_relations ')
+                        push_to_postgis(temp_file,
+                                        kwargs['engine'],
+                                        scheema,table_name+'_relations',
+                                        'append')
+                    br+=1
                     print('push file: ',filename+'_relations ', 'successful')
                     try:
                         publish_on_geoserver(kwargs['geoserver_url'],
@@ -447,6 +467,7 @@ def poi_extractor(file,filterr,save_geojson=False,pbfname='',directory=''):
                     try:
                         print('Push to database: ',pbfname+'_'+key+'_'+z)
                         push_to_postgis(gdfs,engine,'pois',pbfname+'_'+key+'_'+z,'replace')
+                        print('Publish on geoserver: ',pbfname+'_'+key+'_'+z)
                         publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key+'_'+z,'crowdpulse','crowdpulse_db',pbfname+'_'+key+'_'+z)
                     except:
                         print(traceback.format_exc())
@@ -459,14 +480,28 @@ def poi_extractor(file,filterr,save_geojson=False,pbfname='',directory=''):
                     print(directory+'/'+pbfname+'_'+key,' file saved')
                 except Exception:
                     print(directory+'/'+pbfname+'_'+key,' file is not saved')
-        
-        print('Push to database')
-        try:
-            push_to_postgis(gdf,engine,'pois',pbfname+'_'+key,'replace')
-            publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key,'crowdpulse','crowdpulse_db',pbfname+'_'+key)
-        except:
-            print(traceback.format_exc())
-            print('Push to db failed for:',pbfname+'_'+key)            
+        else:
+            if key == 'amenity':
+                for z in values:
+                    gdfs=gdf[gdf['value']==z]
+                    #print('export file ',pbfname+'_'+key+'_'+z,' to geojson')
+                    try:
+                        print('Push to database: ',pbfname+'_'+key+'_'+z)
+                        push_to_postgis(gdfs,engine,'pois',pbfname+'_'+key+'_'+z,'replace')
+                        print('Publish on geoserver: ',pbfname+'_'+key+'_'+z)
+                        publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key+'_'+z,'crowdpulse','crowdpulse_db',pbfname+'_'+key+'_'+z)
+                    except:
+                        print(traceback.format_exc())
+                        print('Push to db failed for:',pbfname+'_'+key+'_'+z)  
+            else:            
+                try:
+                    print('Push to database: ',pbfname+'_'+key)
+                    push_to_postgis(gdf,engine,'pois',pbfname+'_'+key,'replace')
+                    print('Publish on geoserver: ',pbfname+'_'+key)
+                    publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key,'crowdpulse','crowdpulse_db',pbfname+'_'+key)
+                except:
+                    print(traceback.format_exc())
+                    print('Push to db failed for:',pbfname+'_'+key)           
 
 def combine_polygon(filterr,pbfname,directory,**kwargs):
     for key,value in filterr.items():
