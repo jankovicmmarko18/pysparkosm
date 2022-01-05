@@ -99,7 +99,7 @@ read_gpd(path=directory+'/'+pbfname,table_name=pbfname,scheema='polygons',**kwar
 
 
 #NODES:
-poi_extractor(node,filterr)
+poi_extractor(node,filterr,pbfname)
 
 
 #PULL FINAL GEOJSONS - /combination
