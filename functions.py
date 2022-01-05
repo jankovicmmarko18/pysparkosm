@@ -512,7 +512,7 @@ def dump_spec_rel(fname,pdf):
     #gpdf=gpd.read_file('test.geojson')
     #return gpdf
 
-def poi_extractor(file,filterr):
+def poi_extractor(file,filterr,pbfname):
     s=file
     engine=pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0]
     #conn=pg_connection()[1]
