@@ -53,6 +53,7 @@ filterr={
        'hangar','helipad','heliport','holding_position','navigationaid',
        'beacon','parking_position','runway','taxilane','taxiway',
        'terminal','windsock','highway_strip','User defined'],
+    'police':'',
     'company':'',
     'diplomatic':'',
     'education':'',
@@ -66,7 +67,7 @@ filterr={
 
         }
 
-poi_extractor(file=node,filterr=filterr,save_geojson=True,pbfname=pbfname,directory=directory+'/'+pbfname+'/nodes')
+#poi_extractor(file=node,filterr=filterr,save_geojson=True,pbfname=pbfname,directory=directory+'/'+pbfname+'/nodes')
 
 
 kwargs={'engine':pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0],
@@ -98,6 +99,8 @@ dump_buildings_to_geojson_relation(fname_rl,pdf)
 read_gpd(path=directory+'/'+pbfname,table_name=pbfname,scheema='polygons',**kwargs)
 
 #PULL FINAL GEOJSONS - /combination
+
+poi_extractor(node,filterr)
 combine_polygon(filterr,pbfname,directory,**kwargs)
 
 
