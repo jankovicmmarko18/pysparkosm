@@ -37,7 +37,6 @@ way=spark.read.parquet(directory+'/'+pbfname+'/'+pbfname+'-latest.osm.pbf.way.pa
 relation=spark.read.parquet(directory+'/'+pbfname+'/'+pbfname+'-latest.osm.pbf.relation.parquet')
 
 #RUN SCRIPTS:
-#NODES:
 
 filterr={
     'amenity':[
@@ -98,9 +97,12 @@ dump_buildings_to_geojson_relation(fname_rl,pdf)
 
 read_gpd(path=directory+'/'+pbfname,table_name=pbfname,scheema='polygons',**kwargs)
 
-#PULL FINAL GEOJSONS - /combination
 
+#NODES:
 poi_extractor(node,filterr)
+
+
+#PULL FINAL GEOJSONS - /combination
 combine_polygon(filterr,pbfname,directory,**kwargs)
 
 
