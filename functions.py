@@ -512,7 +512,7 @@ def dump_spec_rel(fname,pdf):
     #gpdf=gpd.read_file('test.geojson')
     #return gpdf
 
-def poi_extractor(file,filterr,pbfname,**kwargs):
+def poi_extractor(file,filterr,pbfname,publish=False,**kwargs):
     s=file
     #engine=pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0]
     #conn=pg_connection()[1]
@@ -541,15 +541,17 @@ def poi_extractor(file,filterr,pbfname,**kwargs):
         try:
             print('Push to database: ',pbfname+'_'+key)
             push_to_postgis(gpdf,kwargs['engine'],'pois',pbfname+'_'+key,'replace')
-            print('Publish on geoserver: ',pbfname+'_'+key)
+            
             #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key,'crowdpulse','crowdpulse_db',pbfname+'_'+key)
-            publish_on_geoserver(kwargs['geoserver_url'],
-                                             kwargs['geoserver_username'],
-                                             kwargs['geoserver_pass'],
-                                             pbfname+'_'+key,
-                                             kwargs['geoserver_wspace'],
-                                             kwargs['geoserver_store'],
-                                             pbfname+'_'+key)
+            if publish == True:
+                print('Publish on geoserver: ',pbfname+'_'+key)
+                publish_on_geoserver(kwargs['geoserver_url'],
+                                                 kwargs['geoserver_username'],
+                                                 kwargs['geoserver_pass'],
+                                                 pbfname+'_'+key,
+                                                 kwargs['geoserver_wspace'],
+                                                 kwargs['geoserver_store'],
+                                                 pbfname+'_'+key)
         except:
             print(traceback.format_exc())
             print('Push to db failed for:',pbfname+'_'+key)
