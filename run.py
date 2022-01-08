@@ -101,7 +101,7 @@ for pbfname in pbfnames:
 
 
     #NODES:
-    poi_extractor(node,filterr,pbfname)
+    poi_extractor(node,filterr,pbfname,publish=False,**kwargs)
 
 
     #PULL FINAL GEOJSONS - /combination
