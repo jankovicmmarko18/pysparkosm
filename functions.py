@@ -212,7 +212,7 @@ def dump_buildings_to_geojson(fname,pdfs):
         print('iter done'+fname+'_'+str(br)+'.geojson')
         br+=1
         
-def read_gpd(path,table_name,scheema,**kwargs):
+def read_gpd(path,table_name,scheema,publish=False,**kwargs):
     try:
         filenames = glob.glob(path + '/ways/' + "/*.geojson")
 
@@ -238,17 +238,18 @@ def read_gpd(path,table_name,scheema,**kwargs):
                                         'append')
                     br+=1
                     print('push file: ',filename+'_ways ', 'successful')
-                    try:
-                        publish_on_geoserver(kwargs['geoserver_url'],
-                                             kwargs['geoserver_username'],
-                                             kwargs['geoserver_pass'],
-                                             table_name+'_ways',
-                                             kwargs['geoserver_wspace'],
-                                             kwargs['geoserver_store'],
-                                             table_name+'_ways')
-                        print('publish file: ',filename+'_ways ', 'successful')
-                    except:
-                        print('failed publish for: ',filename+'_ways')
+                    if publish==True:
+                        try:
+                            publish_on_geoserver(kwargs['geoserver_url'],
+                                                 kwargs['geoserver_username'],
+                                                 kwargs['geoserver_pass'],
+                                                 table_name+'_ways',
+                                                 kwargs['geoserver_wspace'],
+                                                 kwargs['geoserver_store'],
+                                                 table_name+'_ways')
+                            print('publish file: ',filename+'_ways ', 'successful')
+                        except:
+                            print('failed publish for: ',filename+'_ways')
                 except:
                     print('falied push to db for: ',filename+'_ways')
             except:
@@ -281,17 +282,18 @@ def read_gpd(path,table_name,scheema,**kwargs):
                                         'append')
                     br+=1
                     print('push file: ',filename+'_relations ', 'successful')
-                    try:
-                        publish_on_geoserver(kwargs['geoserver_url'],
-                                             kwargs['geoserver_username'],
-                                             kwargs['geoserver_pass'],
-                                             table_name+'_relations',
-                                             kwargs['geoserver_wspace'],
-                                             kwargs['geoserver_store'],
-                                             table_name+'_relations')
-                        print('publish file: ',filename+'_relations ', 'successful')
-                    except:
-                        print('failed publish for: ',filename+'_relations')
+                    if publish == True:
+                        try:
+                            publish_on_geoserver(kwargs['geoserver_url'],
+                                                 kwargs['geoserver_username'],
+                                                 kwargs['geoserver_pass'],
+                                                 table_name+'_relations',
+                                                 kwargs['geoserver_wspace'],
+                                                 kwargs['geoserver_store'],
+                                                 table_name+'_relations')
+                            print('publish file: ',filename+'_relations ', 'successful')
+                        except:
+                            print('failed publish for: ',filename+'_relations')
                 except:
                     print('falied push to db for: ',filename+'_relations')
             except:
