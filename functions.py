@@ -597,6 +597,8 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
             frames=[gd_data,gd_data2,gd_data3,gd_data4]
             rdf = gdf( pd.concat( frames, ignore_index=True) )
             rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
+            rdf['name:en']=rdf['pol_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+            rdf['name']=rdf['pol_tags'].str.extract("\{name(.*?)\}",expand=True)
             #break
             try:
                 rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+val+'.geojson')
