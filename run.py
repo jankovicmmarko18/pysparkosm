@@ -71,9 +71,9 @@ for pbfname in pbfnames:
     #poi_extractor(file=node,filterr=filterr,save_geojson=True,pbfname=pbfname,directory=directory+'/'+pbfname+'/nodes')
 
 
-    kwargs={'engine':pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0],
+    kwargs={'engine':pg_connection('marko','rumarec18','34.147.9.88','5432','crowdpulse')[0],
            #'conn':pg_connection(username,password,host,port,dbname)[1],
-            'geoserver_url':'http://34.91.102.177:8080/geoserver',
+            'geoserver_url':'http://34.147.9.88:8080/geoserver',
             'geoserver_username':'admin',
             'geoserver_pass':'Rumarec18*',
             'geoserver_wspace':'crowdpulse',
