@@ -512,9 +512,9 @@ def dump_spec_rel(fname,pdf):
     #gpdf=gpd.read_file('test.geojson')
     #return gpdf
 
-def poi_extractor(file,filterr,pbfname):
+def poi_extractor(file,filterr,pbfname,**kwargs):
     s=file
-    engine=pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0]
+    #engine=pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0]
     #conn=pg_connection()[1]
     #cur=conn.cursor()
     sf=s.withColumn("key_value",expr(" explode(tags)" ))
@@ -540,9 +540,16 @@ def poi_extractor(file,filterr,pbfname):
         gpdf = gpd.GeoDataFrame(pdf, geometry=gpd.points_from_xy(pdf.longitude, pdf.latitude),crs='EPSG:4326')
         try:
             print('Push to database: ',pbfname+'_'+key)
-            push_to_postgis(gpdf,engine,'pois',pbfname+'_'+key,'replace')
+            push_to_postgis(gpdf,kwargs['engine'],'pois',pbfname+'_'+key,'replace')
             print('Publish on geoserver: ',pbfname+'_'+key)
-            publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key,'crowdpulse','crowdpulse_db',pbfname+'_'+key)
+            #publish_on_geoserver('http://34.91.102.177:8080/geoserver','admin','Rumarec18*',pbfname+'_'+key,'crowdpulse','crowdpulse_db',pbfname+'_'+key)
+            publish_on_geoserver(kwargs['geoserver_url'],
+                                             kwargs['geoserver_username'],
+                                             kwargs['geoserver_pass'],
+                                             pbfname+'_'+key,
+                                             kwargs['geoserver_wspace'],
+                                             kwargs['geoserver_store'],
+                                             pbfname+'_'+key)
         except:
             print(traceback.format_exc())
             print('Push to db failed for:',pbfname+'_'+key)
