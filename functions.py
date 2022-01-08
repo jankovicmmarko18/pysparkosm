@@ -597,10 +597,15 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
             frames=[gd_data,gd_data2,gd_data3,gd_data4]
             rdf = gdf( pd.concat( frames, ignore_index=True) )
             rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
-            rdf['name:en']=rdf['pol_tags'].str.extract("\{name:en(.*?)\}",expand=True)
-            rdf['name']=rdf['pol_tags'].str.extract("\{name(.*?)\}",expand=True)
-            rdf['name']=rdf['name'].str.lstrip(', ')
-            rdf['name:en']=rdf['name:en'].str.lstrip(', ')
+            rdf['name:en_pol']=rdf['pol_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+            rdf['name_pol']=rdf['pol_tags'].str.extract("\{name(.*?)\}",expand=True)
+            rdf['name_pol']=rdf['name_pol'].str.lstrip(', ')
+            rdf['name:en_pol']=rdf['name:en_pol'].str.lstrip(', ')
+            
+            rdf['name:en_poi']=rdf['poi_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+            rdf['name_poi']=rdf['poi_tags'].str.extract("\{name(.*?)\}",expand=True)
+            rdf['name_poi']=rdf['name_poi'].str.lstrip(', ')
+            rdf['name:en_poi']=rdf['name:en_poi'].str.lstrip(', ')
             #break
             try:
                 rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+val+'.geojson')
