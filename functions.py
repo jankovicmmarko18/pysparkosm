@@ -599,6 +599,8 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
             rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
             rdf['name:en']=rdf['pol_tags'].str.extract("\{name:en(.*?)\}",expand=True)
             rdf['name']=rdf['pol_tags'].str.extract("\{name(.*?)\}",expand=True)
+            rdf['name']=rdf['name'].str.lstrip(', ')
+            rdf['name:en']=rdf['name:en'].str.lstrip(', ')
             #break
             try:
                 rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+val+'.geojson')
