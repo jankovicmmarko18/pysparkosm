@@ -619,13 +619,6 @@ def extract_embassies(directory):
         os.mkdir(directory+'/embassies/')
     except:
         pass
-    #for key in filterr:
-    statement="select distinct on (value) value from pois."+pbfname+"_"+str(key)
-    gd_data=pd.read_sql(statement, con=kwargs['engine'])
-    gd_data.value=gd_data.value.str.lower()
-    gd_data.value=gd_data.value.str.replace(' ','_')
-    gd_data.value=gd_data.value.str.replace('-','_')
-    values=gd_data.value.values.tolist()
     statement="""
     select id pol_id, tags pol_tags, geometry geom from 
     polygons."""+pbfname+"""_ways pol where tags ~ '"""+key+"""'
@@ -701,4 +694,4 @@ def extract_embassies(directory):
         gpdf=gpd.read_file(directory+'/embassies/'+i)
         gpdf.drop_duplicates(subset=['pol_id','poi_id'],inplace=True)
         gpdf.to_file(directory+'/embassies/'+i)
-     
+
