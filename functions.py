@@ -613,7 +613,7 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
                 print('failed for:',pbfname+'_'+key+'_'+val+'.geojson')
     
 
-def extract_embassies(directory):
+def extract_embassies(directory,pbfname,**kwargs):
     key='embassy'
     try:
         os.mkdir(directory+'/embassies/')
