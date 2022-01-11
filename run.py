@@ -108,7 +108,7 @@ for pbfname in pbfnames:
     combine_polygon(filterr,pbfname,directory,**kwargs)
     
     #Exctact embassies:
-    extract_embassies(directory)
+    extract_embassies(directory,pbfname,**kwargs)
 
 
 
