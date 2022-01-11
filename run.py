@@ -106,6 +106,9 @@ for pbfname in pbfnames:
 
     #PULL FINAL GEOJSONS - /combination
     combine_polygon(filterr,pbfname,directory,**kwargs)
+    
+    #Exctact embassies:
+    extract_embassies(directory)
 
 
 
