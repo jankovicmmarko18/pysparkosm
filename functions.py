@@ -613,5 +613,92 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
                 print('failed for:',pbfname+'_'+key+'_'+val+'.geojson')
     
 
+def extract_embassies(directory):
+    key='embassy'
+    try:
+        os.mkdir(directory+'/embassies/')
+    except:
+        pass
+    #for key in filterr:
+    statement="select distinct on (value) value from pois."+pbfname+"_"+str(key)
+    gd_data=pd.read_sql(statement, con=kwargs['engine'])
+    gd_data.value=gd_data.value.str.lower()
+    gd_data.value=gd_data.value.str.replace(' ','_')
+    gd_data.value=gd_data.value.str.replace('-','_')
+    values=gd_data.value.values.tolist()
+    statement="""
+    select id pol_id, tags pol_tags, geometry geom from 
+    polygons."""+pbfname+"""_ways pol where tags ~ '"""+key+"""'
+    """
+    gd_data=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    
+    statement="""
+        select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+        pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+        pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_ways as pol 
+        where
+        st_within(poi.geometry, pol.geometry)
+        """
+    gd_data2=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    statement="""
+        select id pol_id, tags pol_tags, geometry geom from 
+        polygons."""+pbfname+"""_relations pol where tags ~ '"""+key+"""'
+        """
+    gd_data3=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    statement="""
+        select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+        pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+        pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_relations as pol 
+        where
+        st_within(poi.geometry, pol.geometry)
+        """
+    gd_data4=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    frames=[gd_data,gd_data2,gd_data3,gd_data4]
+    rdf = gdf( pd.concat( frames, ignore_index=True) )
+    rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
+    rdf['name:en_pol']=rdf['pol_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+    rdf['name_pol']=rdf['pol_tags'].str.extract("\{name(.*?)\}",expand=True)
+    rdf['name_pol']=rdf['name_pol'].str.lstrip(', ')
+    rdf['name:en_pol']=rdf['name:en_pol'].str.lstrip(', ')
 
+    rdf['name:en_poi']=rdf['poi_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+    rdf['name_poi']=rdf['poi_tags'].str.extract("\{name(.*?)\}",expand=True)
+    rdf['name_poi']=rdf['name_poi'].str.lstrip(', ')
+    rdf['name:en_poi']=rdf['name:en_poi'].str.lstrip(', ')
+    #break
+    #try:
+    #    rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+val+'.geojson')
+    #except:
+    #    print('failed for:',pbfname+'_'+key+'_'+val+'.geojson')
+    rdf['country_pol']=rdf['pol_tags'].str.extract("\{country(.*?)\}",expand=True)
+    rdf['country_poi']=rdf['poi_tags'].str.extract("\{country(.*?)\}",expand=True)
+    rdf['country_pol']=rdf['country_pol'].str.lstrip(', ')
+    rdf['country_poi']=rdf['country_poi'].str.lstrip(', ')
+    rdf['country']=''
+    rdf['country'][rdf['country_pol'].notnull()]=rdf['country_pol'][rdf['country_pol'].notnull()]
+    rdf['country'][rdf['country_poi'].notnull()]=rdf['country_poi'][rdf['country_poi'].notnull()]
+    rdf.sort_values(['country'], axis=0, ascending=True, inplace=True)
+    unique_countries=rdf['country'].unique()
+    list_of_countries=os.listdir(directory+'/embassies')
+    for i in unique_countries:
+        prdf=rdf[rdf['country']==i]
+        if str('embassy_'+str(i)+'.geojson') in list_of_countries:
+            try:
+                #print(i)
+                prdf.to_file(directory+'/embassies/embassy_'+str(i)+'.geojson',mode='a')
+                print('appending to: ','/embassies/embassy_'+str(i)+'.geojson')
+            except:
+                print('failed for: ','/embassies/embassy_'+str(i)+'.geojson')
+        else:
+            try:
+            #print(i)
+                prdf.to_file(directory+'/embassies/embassy_'+str(i)+'.geojson',mode='w')
+                print('writing: ','/embassies/embassy_'+str(i)+'.geojson')
+            except:
+                print('failed for: ','/embassies/embassy_'+str(i)+'.geojson')
+    for i in list_of_countries:
+        print('deduping: ',directory+'/embassies/'+i)
+        gpdf=gpd.read_file(directory+'/embassies/'+i)
+        gpdf.drop_duplicates(subset=['pol_id','poi_id'],inplace=True)
+        gpdf.to_file(directory+'/embassies/'+i)
      
