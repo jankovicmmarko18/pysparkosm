@@ -41,32 +41,33 @@ for pbfname in pbfnames:
     #RUN SCRIPTS:
 
     filterr={
-        'amenity':[
-            'college','driving_school','kindergarten',
-            'language_school','library','toy_library',
-            'music_school','school','university',
-            'atm','bank','baby_hatch',
-           'clinic','dentist','doctors',
-           'hospital','nursing_home','pharmacy',
-           'social_facility','veterinary'],
-        'aeroway':[
-                'aerodrome','apron','control_tower','control_center','gate',
-           'hangar','helipad','heliport','holding_position','navigationaid',
-           'beacon','parking_position','runway','taxilane','taxiway',
-           'terminal','windsock','highway_strip','User defined'],
-        'police':'',
-        'company':'',
-        'diplomatic':'',
-        'education':'',
-        'embassy':'',
-        'emergency':'',
-        'engineer':'',
-        'factory':'',
-        'history':'',
-        'military':'',
-        'power':''
+    'amenity':[
+        'college','driving_school','kindergarten',
+        'language_school','library','toy_library',
+        'music_school','school','university',
+        'atm','bank','baby_hatch',
+       'clinic','dentist','doctors',
+       'hospital','nursing_home','pharmacy',
+       'social_facility','veterinary'],
+    'aeroway':[
+            'aerodrome','apron','control_tower','control_center','gate',
+       'hangar','helipad','heliport','holding_position','navigationaid',
+       'beacon','parking_position','runway','taxilane','taxiway',
+       'terminal','windsock','highway_strip','User defined'],
+    'consulate':'',
+    'police':'',
+    'company':'',
+    'diplomatic':'',
+    'education':'',
+    'embassy':'',
+    'emergency':'',
+    'engineer':'',
+    'factory':'',
+    'history':'',
+    'military':'',
+    'power':''
 
-            }
+        }
 
     #poi_extractor(file=node,filterr=filterr,save_geojson=True,pbfname=pbfname,directory=directory+'/'+pbfname+'/nodes')
 
