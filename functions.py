@@ -614,34 +614,42 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
     
 
 def extract_embassies(directory,pbfname,**kwargs):
-    key='embassy'
+    #key='embassy'
     try:
         os.mkdir(directory+'/embassies/')
     except:
         pass
     statement="""
-    select id pol_id, tags pol_tags, geometry geom from 
-    polygons."""+pbfname+"""_ways pol where tags ~ '"""+key+"""'
+        select id pol_id, tags pol_tags, geometry geom from 
+        polygons."""+pbfname+"""_ways pol where tags ~ 'embassy' or tags ~ 'diplomatic' or tags ~ 'consulate'
     """
     gd_data=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
-    
+
     statement="""
         select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
         pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
-        pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_ways as pol 
+        (select * from pois."""+pbfname+"""_embassy emb
+        union
+        select * from pois."""+pbfname+"""_diplomatic dip
+        union
+        select * from pois."""+pbfname+"""_consulate cons) poi, polygons."""+pbfname+"""_ways as pol 
         where
         st_within(poi.geometry, pol.geometry)
         """
     gd_data2=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
     statement="""
         select id pol_id, tags pol_tags, geometry geom from 
-        polygons."""+pbfname+"""_relations pol where tags ~ '"""+key+"""'
+        polygons."""+pbfname+"""_relations pol where tags ~ 'embassy' or tags ~ 'diplomatic' or tags ~ 'consulate'
         """
     gd_data3=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
     statement="""
         select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
         pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
-        pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_relations as pol 
+        (select * from pois."""+pbfname+"""_embassy emb
+        union
+        select * from pois."""+pbfname+"""_diplomatic dip
+        union
+        select * from pois."""+pbfname+"""_consulate cons) poi, polygons."""+pbfname+"""_relations as pol 
         where
         st_within(poi.geometry, pol.geometry)
         """
