@@ -678,6 +678,7 @@ def extract_embassies(directory,pbfname,**kwargs):
     rdf['country']=''
     rdf['country'][rdf['country_pol'].notnull()]=rdf['country_pol'][rdf['country_pol'].notnull()]
     rdf['country'][rdf['country_poi'].notnull()]=rdf['country_poi'][rdf['country_poi'].notnull()]
+    rdf['country']=rdf['country'].str.lower()
     rdf.sort_values(['country'], axis=0, ascending=True, inplace=True)
     unique_countries=rdf['country'].unique()
     list_of_countries=os.listdir(directory+'/embassies')
