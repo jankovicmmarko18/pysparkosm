@@ -60,6 +60,7 @@ spark = SparkSession.\
 sc = spark.sparkContext
 spark.conf.set('spark.sql.repl.eagerEval.enabled', True)
 
+#CONNECT TO THE POSTGIS DATABASE
 def pg_connection(username,password,host,port,dbname):
     sconpar='postgresql+psycopg2://'+username+':'+password+'@'+host+':'+port+'/'+dbname+''
     engine = create_engine(sconpar,echo=False)
@@ -68,6 +69,12 @@ def pg_connection(username,password,host,port,dbname):
     conn = psycopg2.connect(**param_dic)
     return [engine, conn]
 
+# PUSH GEOPANDAS DATAFRAME TO THE DATABASE.
+# gdf - geodataframe variable
+# engine - sqlalchemy engine (ex: engine=pg_connection(args)[0])
+# schemaname - name of the schema in postgis
+# tablename - table name
+# ifexissts - what to do if the table already exists in the schema options: fail, replace, append
 def push_to_postgis(gdf,engine,schemaname,tablename,ifexists):
     gdf.to_postgis(
         con=engine,
@@ -75,8 +82,15 @@ def push_to_postgis(gdf,engine,schemaname,tablename,ifexists):
         if_exists=ifexists,
         schema=schemaname
     )
-#with engine.begin() as conn:
-#    conn.execute("call dedupe_pois()")
+
+# PUBLISH GEODATAFRAME ON GEOSERVER.
+# path - link to the geoserver instance ex: http://0.0.0.0:8080/geoserver
+# username - user name
+# password ..
+# layername - assign layer name on geoserver
+# workspace - geoserver's workspace
+# storename - postgis store name
+# pgtable - name of the table from the database
 def publish_on_geoserver(path,username,password,layername,workspace,storename,pgtable):
     #'http://34.91.102.177:8080/geoserver'
     geo = Geoserver(path, username=username, password=password)
@@ -89,22 +103,18 @@ def publish_on_geoserver(path,username,password,layername,workspace,storename,pg
     except:
         print('Layer ',layername,' not published!')
 
-
-#GET DATA FROM OSM USING PYROSM
-#get_data('sources.available.keys()',directory='./osm/pbf',update=True/False)
-#
-#LIST DIRECTORY
-#os.listdir('./osm_pyrosm')
-#
-#PARQUETIZE .pbf file to node, way and relation
+# PARQUETIZE PBF FILES (convert osm.pbf file to node.parquet, way.parquet, relation.parquet - big data friendly format)
+# driver - java driver location ex: /home/remote/osm-parquetizer/target/osm-parquetizer-1.0.1-SNAPSHOT.jar
+# file - osm.pbf file path
 def parquetize(driver,file):
     #bashCommand = "java -jar /home/marko/osm-parquetizer/target/osm-parquetizer-1.0.1-SNAPSHOT.jar /home/marko/osm_pyrosm/chile-latest.osm.pbf"
     #driver path: /home/marko/osm-parquetizer/target/osm-parquetizer-1.0.1-SNAPSHOT.jar
     bashCommand = "java -jar "+driver+" "+file
     process = subprocess.run(bashCommand.split(), stdout=subprocess.PIPE)
-#
-#LOAD PARQUET FILES
-#
+    
+# PULL ALL BUILDINGS FROM way.parquet FILE
+# node - path to node.parquet file
+# way - path to way.parquet file
 def pull_buildings(node,way):
     st=node.withColumn('tags',node.tags.cast(StringType()))
     st=st.withColumn('nodeId',st.id)
@@ -133,7 +143,9 @@ def pull_buildings(node,way):
     pdfs['lindex']=pdfs.index
     return pdfs
     
-
+#DUMP ALL BUILDINGS TO GEOJSON FILES ON 
+# fname=directory+'/'+pbfname+'/'+'ways/'+pbfname+'-latest-building' 
+# pdfs=pull_buildings(node,way)
 def dump_buildings_to_geojson(fname,pdfs):
     c=len(pdfs.index)
     print('count of features: ',c)
@@ -182,6 +194,8 @@ def dump_buildings_to_geojson(fname,pdfs):
         print('iter done'+fname+'_'+str(br)+'.geojson')
         br+=1
         
+# READ ALL GEOJSON POLYGONS (WAYS AND RELATIONS) AND PUSH THEM TO THE DATABASE IN TABLES: pbfname_ways, pbfname_relations
+# read_gpd(path=directory+'/'+pbfname,table_name=pbfname,scheema='polygons',**kwargs)
 def read_gpd(path,table_name,scheema,publish=False,**kwargs):
     try:
         filenames = glob.glob(path + '/ways/' + "/*.geojson")
@@ -271,7 +285,10 @@ def read_gpd(path,table_name,scheema,publish=False,**kwargs):
     except:
         print('failed while reading relations')
         
-        
+# PULL ALL BUILDINGS FROM relation.parquet FILE
+# node - path to node.parquet file
+# way - path to way.parquet file 
+# relation - path to relation.parquet file
 def pull_buildings_relations(node,way,relation):
     rel=relation.select('id','tags','members')
     #st=node.withColumn('tags',node.tags.cast(StringType()))
@@ -324,6 +341,9 @@ def pull_buildings_relations(node,way,relation):
     sorter_rel(pdf)
     return pdf
 
+# DUMP ALL BUILDINGS TO GEOJSON FILES ON 
+# fname=directory+'/'+pbfname+'/'+'relations/'+pbfname+'-latest-building' 
+# pdf=pull_buildings_relations(node,way,relation)
 def dump_buildings_to_geojson_relation(fname,pdf):
     print('creating geojson')
     d={}
@@ -380,6 +400,10 @@ def dump_buildings_to_geojson_relation(fname,pdf):
         json.dump(d, f)
     print('dumping finished, file name: ',fname+'.geojson')
     
+    
+# GET SPECIFIC RELATIONS FROM SELECTED TAGS
+# node, way, relation - paths to the files
+# key, value - string input ex: 'aeroway','aerodrome'
 def get_specific_relations(node,way,relation,key,value):
     rel=relation.select('id','tags','members')
     #st=node.withColumn('tags',node.tags.cast(StringType()))
@@ -432,6 +456,9 @@ def get_specific_relations(node,way,relation,key,value):
     sorter_rel(pdf)
     return pdf
 
+# DUMP TO GEOJSON POLYGONS FROM pdf= get_specific_relations(node,way,relation,key,value)
+# fname=directory+'/'+pbfname+'/'+'relations/'+pbfname+'-latest-building' 
+# pdf=get_specific_relations(node,way,relation,key,value)
 def dump_spec_rel(fname,pdf):
     print('creating geojson')
     d={}
@@ -484,6 +511,19 @@ def dump_spec_rel(fname,pdf):
     #gpdf=gpd.read_file('test.geojson')
     #return gpdf
 
+# EXTRACT POIs FROM PBF FILE BASED ON TAGS IN filterr dictionary
+# file - node.parquet file path
+# filterr - python dictionary with osm tags ex: {'amenity':'','power':''}
+# pbfname - pbf file name ex: 'chile'
+# publish - bool - to publish the table to the geoserver or not
+# **kwargs - database and geoserver parameters ex: kwargs={'engine':pg_connection('marko','rumarec18','34.147.9.88','5432','crowdpulse')[0],
+       #'conn':pg_connection(username,password,host,port,dbname)[1],
+        #'geoserver_url':'http://34.147.9.88:8080/geoserver',
+        #'geoserver_username':'admin',
+        #'geoserver_pass':'Rumarec18*',
+        #'geoserver_wspace':'crowdpulse',
+        #'geoserver_store':'crowdpulse_db_polygons'
+       #}
 def poi_extractor(file,filterr,pbfname,publish=False,**kwargs):
     s=file
     #engine=pg_connection('marko','rumarec18','34.91.102.177','5432','crowdpulse')[0]
@@ -528,6 +568,11 @@ def poi_extractor(file,filterr,pbfname,publish=False,**kwargs):
             print(traceback.format_exc())
             print('Push to db failed for:',pbfname+'_'+key)
 
+# SPATIAL JOIN POI AND POLYGON DATA FROM THE DATABASE WITH THE SAME KEY, VALUE - result - pbfname_key_value.geojson 
+# filterr - python dict key value pairs
+# pbfname - region name - ex: 'chile'
+# directory - directory of the main pbf file
+# **kwargs - same as in poi_extractor
 def combine_polygon(filterr,pbfname,directory,**kwargs):
     for key in filterr:
         statement="select distinct on (value) value from pois."+pbfname+"_"+str(key)
@@ -582,7 +627,11 @@ def combine_polygon(filterr,pbfname,directory,**kwargs):
             except:
                 print('failed for:',pbfname+'_'+key+'_'+val+'.geojson')
     
-
+# EXTRACT EMBASSIES FRMO THE SOURCE PBF FILE TO THE DESTINATION COUNTRY .geojson file - result - embassy_iso2countrycode.geojson 
+# FUNCTION WILL APPEND ENTRIES IN THE .geojson files and dedupe them based on osmid
+# directory - directory of the main pbf file
+# pbfname - pbf name - ex: 'chile'
+# **kwargs - same as above
 def extract_embassies(directory,pbfname,**kwargs):
     #key='embassy'
     try:
