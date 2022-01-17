@@ -17,38 +17,13 @@ from pyspark.sql import functions as f
 from pyspark.sql.functions import expr
 import glob
 
-import geopandas as gpd
-import pandas as pd
+#import geopandas as gpd
 from pyspark.sql.types import StructType
 from pyspark.sql.types import StructField
 from pyspark.sql.types import StringType
 from pyspark.sql.types import LongType
 from shapely.geometry import Point
 from shapely.geometry import Polygon
-
-from sedona.register import SedonaRegistrator
-from sedona.core.SpatialRDD import SpatialRDD
-from sedona.core.SpatialRDD import PointRDD
-from sedona.core.SpatialRDD import PolygonRDD
-from sedona.core.SpatialRDD import LineStringRDD
-from sedona.core.enums import FileDataSplitter
-from sedona.utils.adapter import Adapter
-from sedona.core.spatialOperator import KNNQuery
-from sedona.core.spatialOperator import JoinQuery
-from sedona.core.spatialOperator import JoinQueryRaw
-from sedona.core.spatialOperator import RangeQuery
-from sedona.core.spatialOperator import RangeQueryRaw
-from sedona.core.formatMapper.shapefileParser import ShapefileReader
-from sedona.core.formatMapper import WkbReader
-from sedona.core.formatMapper import WktReader
-from sedona.core.formatMapper import GeoJsonReader
-from sedona.sql.types import GeometryType
-from sedona.core.enums import GridType
-from sedona.core.SpatialRDD import RectangleRDD
-from sedona.core.enums import IndexType
-from sedona.core.geom.envelope import Envelope
-from sedona.utils import SedonaKryoRegistrator, KryoSerializer
-
 
 import traceback
 import sys
@@ -77,18 +52,13 @@ import concurrent.futures
 spark = SparkSession.\
     builder.\
     master("local[*]").\
-    appName("Sedona App").\
-    config("spark.serializer", KryoSerializer.getName).\
-    config("spark.kryo.registrator", SedonaKryoRegistrator.getName) .\
-    config("spark.jars.packages", "org.apache.sedona:sedona-python-adapter-3.0_2.12:1.1.0-incubating,org.datasyslab:geotools-wrapper:1.1.0-25.2") .\
+    appName("Pyspark App").\
     getOrCreate()
 
 
-SedonaRegistrator.registerAll(spark)
+#SedonaRegistrator.registerAll(spark)
 sc = spark.sparkContext
 spark.conf.set('spark.sql.repl.eagerEval.enabled', True)
-
-
 
 def pg_connection(username,password,host,port,dbname):
     sconpar='postgresql+psycopg2://'+username+':'+password+'@'+host+':'+port+'/'+dbname+''
@@ -703,4 +673,3 @@ def extract_embassies(directory,pbfname,**kwargs):
         gpdf=gpd.read_file(directory+'/embassies/'+i)
         gpdf.drop_duplicates(subset=['pol_id','poi_id'],inplace=True)
         gpdf.to_file(directory+'/embassies/'+i)
-
