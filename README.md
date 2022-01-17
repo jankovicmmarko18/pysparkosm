@@ -68,7 +68,6 @@ relation
  |    |    |-- type: stringur.pbf
 
 
-PYSPARK and SEDONA:
 PYSPARK:
 Before installing pySpark, you must have Python and Spark installed. I also encourage you to set up a virtualenv
 To install Spark, make sure you have Java 8 or higher installed on your computer. Then, visit the Spark downloads page. Select the latest Spark release, a prebuilt package for Hadoop, and download it directly.
@@ -132,7 +131,7 @@ sc.stop()
 
 If it gives output, pyspark is working!
 
-INSTALL SEDONA:
+INSTALL SEDONA ( YOU CAN SKIP THIS, WE DON'T USE SEDONA):
 
 install pyspark with hadoop and run it 
 after it's running successfully
@@ -163,11 +162,11 @@ conda activate osm
 conda install -c conda-forge pyrosm
 pip install --ignore-installed cykhash==1.0.2
 
-In order to fully use the script capabilities, install and connect geoserver, mapstore and postgresql with postgis extension and set the parameters in run.py file
+In order to fully use the script capabilities, install and connect geoserver, mapstore and postgresql with postgis extension and set the parameters in run.py file - kwargs
 Moify run.py input parameters
 In order to run the script, locate run.py, open anaconda terminal with active osm environment and run:
 python run.py
-files will be extracted on location (directory+pbfname) and uploaded to the database and published on the geoserver.
+files will be extracted on location (directory+pbfname) if you want published on the geoserver, enable publishing in read and node extraction functions in run.py
 
 
 
