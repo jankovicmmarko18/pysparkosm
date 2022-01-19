@@ -722,3 +722,67 @@ def extract_embassies(directory,pbfname,**kwargs):
         gpdf=gpd.read_file(directory+'/embassies/'+i)
         gpdf.drop_duplicates(subset=['pol_id','poi_id'],inplace=True)
         gpdf.to_file(directory+'/embassies/'+i)
+      
+    
+# EXTRACT SELECTED TAGS BASED ON key, value, sel_key, sel_val ex: extract_selected('amenity','restaurant','name','mamut',pbfname,directory,**kwargs)  
+# sel_key and sel_val are not case sensitive
+def extract_selected(key,value,sel_key,sel_val,pbfname,directory,**kwargs):
+        
+    print('key:',key,'value:',value,'sel_key:',sel_key,'sel_val:',sel_val)
+    statement="""
+        select id pol_id, tags pol_tags, geometry geom from 
+        polygons."""+pbfname+"""_ways pol where tags ~ '"""+key+', '+value+"""'
+        """
+    gd_data=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    statement="""
+        select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+        pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+        pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_ways as pol 
+        where
+        st_within(poi.geometry, pol.geometry) and poi.value = '"""+value+"""'
+        """
+    gd_data2=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    statement="""
+        select id pol_id, tags pol_tags, geometry geom from 
+        polygons."""+pbfname+"""_relations pol where tags ~ '"""+key+', '+value+"""'
+        """
+    gd_data3=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    statement="""
+        select poi.id poi_id, poi.tags poi_tags, poi.key poi_key, poi.value poi_value, 
+        pol.id pol_id, pol.tags pol_tags, pol.geometry geom from 
+        pois."""+pbfname+'_'+key+""" as poi, polygons."""+pbfname+"""_relations as pol 
+        where
+        st_within(poi.geometry, pol.geometry) and poi.value = '"""+value+"""'
+        """
+    gd_data4=gdf.from_postgis(statement, con=kwargs['engine'],geom_col='geom')
+    frames=[gd_data,gd_data2,gd_data3,gd_data4]
+    rdf = gdf( pd.concat( frames, ignore_index=True) )
+    rdf.drop_duplicates(subset=['pol_id'],keep='first',inplace=True)
+    #rdf['name:en_pol']=rdf['pol_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+    #rdf['name_pol']=rdf['pol_tags'].str.extract("\{name(.*?)\}",expand=True)
+    #rdf['name_pol']=rdf['name_pol'].str.lstrip(', ')
+    #rdf['name:en_pol']=rdf['name:en_pol'].str.lstrip(', ')
+
+    #rdf['name:en_poi']=rdf['poi_tags'].str.extract("\{name:en(.*?)\}",expand=True)
+    #rdf['name_poi']=rdf['poi_tags'].str.extract("\{name(.*?)\}",expand=True)
+    #rdf['name_poi']=rdf['name_poi'].str.lstrip(', ')
+    #rdf['name:en_poi']=rdf['name:en_poi'].str.lstrip(', ')
+
+    rdf[sel_key+'_pol']=rdf['pol_tags'].str.extract("\{"+sel_key+"(.*?)\}",expand=True)
+    rdf[sel_key+'_pol']=rdf[sel_key+'_pol'].str.lstrip(', ')
+
+    rdf[sel_key+'_poi']=rdf['poi_tags'].str.extract("\{"+sel_key+"(.*?)\}",expand=True)
+    rdf[sel_key+'_poi']=rdf[sel_key+'_poi'].str.lstrip(', ')
+
+    rdf[sel_key]=''
+    rdf[sel_key][rdf[sel_key+'_pol'].notna()]=rdf[sel_key+'_pol'][rdf[sel_key+'_pol'].notna()]
+    rdf[sel_key][rdf[sel_key+'_poi'].notna()]=rdf[sel_key+'_poi'][rdf[sel_key+'_poi'].notna()]
+    rdf[sel_key]=rdf[sel_key].str.lower()
+    sel_val=sel_val.lower()
+    rdf=rdf[rdf[sel_key]==sel_val]
+    #break
+    try:
+        rdf.to_file(directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+value+'_'+sel_key+'_'+sel_val+'.geojson')
+        print('file saved to: ',directory+'/'+pbfname+'/combination/'+pbfname+'_'+key+'_'+value+'_'+sel_key+'_'+sel_val+'.geojson')
+    except:
+        print('failed for:',pbfname+'_'+key+'_'+value+'_'+sel_key+'_'+sel_val+'.geojson')
