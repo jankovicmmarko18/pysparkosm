@@ -104,6 +104,9 @@ for pbfname in pbfnames:
     
     #Exctact embassies:
     extract_embassies(directory,pbfname,**kwargs)
+    
+    #Extract selected:
+    extract_selected('amenity','restaurant','name','mamut',pbfname,directory,**kwargs)
 
 
 
